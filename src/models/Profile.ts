@@ -1,5 +1,6 @@
-export interface ProfileData {
-  ok: boolean;
+import { WebAPICallResult } from "@slack/web-api";
+
+export interface ProfileData extends WebAPICallResult {
   profile: Profile;
 }
 

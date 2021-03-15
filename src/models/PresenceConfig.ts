@@ -4,7 +4,6 @@ export interface PresenceConfig {
   name: string;
   accessory: string;
   oAuthToken: string;
-  inMeetingText: string;
   interval: number;
   setColorApi: string;
   offApi: string;

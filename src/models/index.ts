@@ -1,6 +1,6 @@
 export * from './AccessToken';
-export * from './Activity';
 export * from './Availability';
+export * from './DnD';
 export * from './Homebridge';
 export * from './HomebridgeAccessory';
 export * from './Logger';

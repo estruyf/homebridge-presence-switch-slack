@@ -24,12 +24,6 @@
         "type": "string",
         "default": ""
       },
-      "inMeetingText": {
-        "title": "In a meeting status text",
-        "description": "Text which you use when in a meeting (In a meeting for Google Calendar app).",
-        "type": "string",
-        "default": "in a meeting"
-      },
       "interval": {
         "title": "Interval",
         "description": "Polling interval.",
@@ -128,37 +122,6 @@
                 "title": "Green",
                 "description": "Value between: 0 - 255.",
                 "default": 191
-              },
-              "blue": {
-                "type": "integer",
-                "title": "Blue",
-                "description": "Value between: 0 - 255.",
-                "default": 0
-              }
-            }
-          },
-          "busy": {
-            "type": "object",
-            "title": "Busy",
-            "description": "The color for when you are busy.",
-            "default": {},
-            "required": [
-              "red",
-              "green",
-              "blue"
-            ],
-            "properties": {
-              "red": {
-                "type": "integer",
-                "title": "Red",
-                "description": "Value between: 0 - 255.",
-                "default": 179
-              },
-              "green": {
-                "type": "integer",
-                "title": "Green",
-                "description": "Value between: 0 - 255.",
-                "default": 0
               },
               "blue": {
                 "type": "integer",

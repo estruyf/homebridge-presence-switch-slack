@@ -1,21 +1,22 @@
-# Presence switch connected to Slack
+# Homebridge presence switch connected to Slack
 
-> **TODO**: Update readme
-
-[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins) 
 [![homebridge-presence-switch-slack](https://badgen.net/npm/v/homebridge-presence-switch-slack)](https://www.npmjs.com/package/homebridge-presence-switch-slack)
 
-More information for now can be found here: [https://www.eliostruyf.com/diy-building-busy-light-show-microsoft-teams-presence/](https://www.eliostruyf.com/diy-building-busy-light-show-microsoft-teams-presence/).
+This is a fork of the [Homebridge presence switch connected to Microsoft Graph](https://github.com/estruyf/homebridge-presence-switch-msgraph). In this version, the presence is retrieved from the `Slack` APIs.
 
-> **Info**: Since verions `1.3.0` the plugin added state switches. These switches can be used for `HomeKit` automation. You can still use the API approach as well. This now supports the `Do Not Disturb` mode as well.
+> **Info**: More information for now can be found here: [https://www.eliostruyf.com/diy-building-busy-light-show-microsoft-teams-presence/](https://www.eliostruyf.com/diy-building-busy-light-show-microsoft-teams-presence/).
 
-## Custom activity
+The Slack Presence Switch contains the following state switches which you can use in Homekit to automate:
 
-As of version `1.5.0` you are now able to add custom activity statuses to the plugin. This mean, that besides the availablity (`available`, `away`, `busy`, and `donotdisturb`) statuses, you can now add your own activities you want to track. 
+- Available
+- Away
+- DnD
+- Offline
+- `<Slack status>`: This can be used to specify custom colors for you own status messages in `Slack`. For instance you can use it to in combination with Google Calendar status in meeting: `In a meeting • Google Calendar`. This status could be useful to show a color when you are busy.
 
-Supported activities are: `Available`, `Away`, `BeRightBack`, `Busy`, `DoNotDisturb`, `InACall`, `InAConferenceCall`, `Inactive`, `InAMeeting`, `Offline`, `OffWork`, `OutOfOffice`, `PresenceUnknown`, `Presenting`, `UrgentInterruptionsOnly`.
+## Custom status colors
 
-If you want to add for instance a `InACall` activity status, you can do this by adding the activity status to the `statusColor` config object as follows:
+If you want to add your own custom status colors to show that you are in a meeting for example. You can add the related Slack status message in your config as follows:
 
 ```json
 {
@@ -24,8 +25,8 @@ If you want to add for instance a `InACall` activity status, you can do this by 
   "statusColors": {
     ...,
 
-    "InACall": {
-      "red": 255,
+    "In a meeting • Google Calendar": {
+      "red": 179,
       "green": 0,
       "blue": 0
     }
@@ -33,7 +34,7 @@ If you want to add for instance a `InACall` activity status, you can do this by 
 }
 ```
 
-> **Info**: each off these activities you add, will also get a corresponding switch. That way you can add do Homekit automation based on the state of these switches.
+> **Info**: each off these status messages you add, will also get a corresponding switch. That way you can add do Homekit automation based on the state of these switches.
 
 ## Config
 
@@ -41,9 +42,9 @@ The `accessory` config could look like this:
 
 ```json
 {
-  "accessory": "presence-switch",
-  "name": "Presence Indicator",
-  "appId": "66204339-daf1-40fa-aa31-57342272edce",
+  "accessory": "presence-switch-slack",
+  "name": "Slack Presence Indicator",
+  "oAuthToken": "<your-token>",
   "interval": 1,
   "setColorApi": "http://127.0.0.1:5000/api/switch",
   "offApi": "http://127.0.0.1:5000/api/off",
@@ -62,18 +63,13 @@ The `accessory` config could look like this:
       "green": 191,
       "blue": 0
     },
-    "busy": {
-      "red": 179,
-      "green": 0,
-      "blue": 0
-    },
     "donotdisturb": {
       "red": 149,
       "green": 0,
       "blue": 0
     },
-    "<activity>": {
-      "red": 255,
+    "<slack status>": {
+      "red": 179,
       "green": 0,
       "blue": 0
     }
@@ -83,11 +79,12 @@ The `accessory` config could look like this:
 }
 ```
 
-Since version `1.3.0` the plugin contains 5 state switches:
+## Homekit integration
+
+The following four state switches are available for you to make use of:
 
 - Offline
 - Do not disturb
-- Busy
 - Away
 - Available
 
@@ -95,12 +92,12 @@ These switches can be used in `HomeKit` automation. If you use these, you do not
 
 ```json
 {
-  "accessory": "presence-switch",
-  "name": "Presence Indicator",
-  "appId": "66204339-daf1-40fa-aa31-57342272edce",
+  "accessory": "presence-switch-slack",
+  "name": "Slack Presence Indicator",
+  "oAuthToken": "<your-token>",
   "interval": 1,
   "startTime": "8:30",
   "endTime": "18:00",
-  "weekend": false,
+  "weekend": false
 }
 ```

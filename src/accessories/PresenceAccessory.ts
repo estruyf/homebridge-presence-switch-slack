@@ -1,8 +1,7 @@
 /// <reference types="hap-nodejs" />
 
-import * as slack from 'slack';
-import { Homebridge, HomebridgeAccessory, PresenceConfig, Logger, StatusColors, RGB, ProfileData, Availability, Activity } from '../models';
-import persist from 'node-persist';
+import { WebClient } from '@slack/web-api';
+import { Homebridge, HomebridgeAccessory, PresenceConfig, Logger, StatusColors, ProfileData, Availability, Presence, DnD } from '../models';
 import { splitHours } from '../helpers';
 import { BusyLightService } from '../services';
 
@@ -13,11 +12,9 @@ export class PresenceAccessory implements HomebridgeAccessory {
   private static version: string = null;
 
   private accessoryService: HAPNodeJS.Service = null;
-  private storage: typeof persist;
 
   private switchOff: HAPNodeJS.Service = null;
   private switchAway: HAPNodeJS.Service = null;
-  private switchBusy: HAPNodeJS.Service = null;
   private switchAvailable: HAPNodeJS.Service = null;
   private switchDnD: HAPNodeJS.Service = null;
 
@@ -34,11 +31,6 @@ export class PresenceAccessory implements HomebridgeAccessory {
     away: {
       red: 255,
       green: 191,
-      blue: 0
-    },
-    busy: {
-      red: 179,
-      green: 0,
       blue: 0
     },
     donotdisturb: {
@@ -61,8 +53,7 @@ export class PresenceAccessory implements HomebridgeAccessory {
     lightType: null,
     statusColors: this.defaultColors,
     weekend: false,
-    debug: false,
-    inMeetingText: "in a meeting"
+    debug: false
   };
   
   /**
@@ -94,9 +85,6 @@ export class PresenceAccessory implements HomebridgeAccessory {
     // Register state switches
     this.switchOff = new PresenceAccessory.service.Switch(`Switch Offline - ${this.config.name}`, 'Offline');
     this.switchOff.getCharacteristic(PresenceAccessory.characteristic.On).updateValue(false);
-    
-    this.switchBusy = new PresenceAccessory.service.Switch(`Switch Busy - ${this.config.name}`, 'Busy');
-    this.switchBusy.getCharacteristic(PresenceAccessory.characteristic.On).updateValue(false);
 
     this.switchAway = new PresenceAccessory.service.Switch(`Switch Away - ${this.config.name}`, 'Away');
     this.switchAway.getCharacteristic(PresenceAccessory.characteristic.On).updateValue(false);
@@ -108,16 +96,13 @@ export class PresenceAccessory implements HomebridgeAccessory {
     this.switchDnD.getCharacteristic(PresenceAccessory.characteristic.On).updateValue(false);
 
     // Register custom switches if needed
-    const otherStates = Object.keys(this.config.statusColors).filter(status => status !== "available" && status !== "away" && status !== "busy" && status !== "donotdisturb");
+    const otherStates = Object.keys(this.config.statusColors).filter(status => status !== "available" && status !== "away" && status !== "donotdisturb");
     if (otherStates && otherStates.length > 0) {
       for (const state of otherStates) {
         this.activitySwitches[state.toLowerCase()] = new PresenceAccessory.service.Switch(`Switch ${state} - ${this.config.name}`, state);
         this.activitySwitches[state.toLowerCase()].getCharacteristic(PresenceAccessory.characteristic.On).updateValue(false);
       }
     }
-
-    // Initialize the accessory
-    this.init();
   }
 
   /**
@@ -127,23 +112,11 @@ export class PresenceAccessory implements HomebridgeAccessory {
     const informationService = new (PresenceAccessory.service as any).AccessoryInformation();
     const characteristic = PresenceAccessory.characteristic;
     informationService.setCharacteristic(characteristic.Manufacturer, 'Elio Struyf')
-                      .setCharacteristic(characteristic.Model, 'Presence Indicator')
-                      .setCharacteristic(characteristic.SerialNumber, 'PI_01')
+                      .setCharacteristic(characteristic.Model, 'Slack Presence Indicator')
+                      .setCharacteristic(characteristic.SerialNumber, 'PI_02')
                       .setCharacteristic(characteristic.FirmwareRevision, PresenceAccessory.version);
     const otherSwitches = Object.keys(this.activitySwitches);
-    return [informationService, this.accessoryService, this.switchOff, this.switchDnD, this.switchBusy, this.switchAway, this.switchAvailable, ...otherSwitches.map(name => this.activitySwitches[name])];
-  }
-
-  /**
-   * Initialize the button
-   */
-  private async init() {
-    const storePath = PresenceAccessory.api.user.persistPath();
-    this.storage = persist;
-    await this.storage.init({
-      dir: storePath,
-      forgiveParseErrors: true
-    });
+    return [informationService, this.accessoryService, this.switchOff, this.switchDnD, this.switchAway, this.switchAvailable, ...otherSwitches.map(name => this.activitySwitches[name])];
   }
 
   /**
@@ -169,40 +142,46 @@ export class PresenceAccessory implements HomebridgeAccessory {
    */
   private presencePolling = async () => {
     const shouldFetch = this.shouldCheckPresence();
+    
     if (shouldFetch) {
-      const token = this.config.oAuthToken;
-      const profileData: ProfileData = await slack.users.profile.get({ token }) as ProfileData;
+      const slack = new WebClient(this.config.oAuthToken);
+      const presenceData: Presence = await slack.users.getPresence() as Presence;
+
       if (this.config.debug) {
-        this.log.info(`Slack profile data ${JSON.stringify(profileData)}`);
+        this.log.info(`Slack presence data ${JSON.stringify(presenceData)}`);
       }
       
-      if (profileData && profileData.ok && profileData.profile && typeof profileData.profile.status_text !== "undefined") {
-        const activity = profileData.profile.status_text;
-        const isInMeeting = activity.toLowerCase().indexOf(this.config.inMeetingText.toLowerCase());
-        const statusState = isInMeeting !== -1 ? Availability.Busy : Availability.Available;
-        const activityState = isInMeeting !== -1 ? Activity.Busy : Activity.Available;
+      if (presenceData && presenceData.ok && presenceData.online) {
+        let availability = presenceData.presence && presenceData.presence === 'active' ? Availability.Available : Availability.Away;
 
+        const profileData: ProfileData = await slack.users.profile.get() as ProfileData;
         if (this.config.debug) {
-          this.log.info(`Slack status: ${statusState} - activity: ${activityState}`);
+          this.log.info(`Slack profile data ${JSON.stringify(profileData)}`);
+        }
+
+        const dndData: DnD = await slack.dnd.info() as DnD;
+        if (this.config.debug) {
+          this.log.info(`Slack dnd data ${JSON.stringify(dndData)}`);
         }
         
-        let color: RGB = this.config.statusColors[statusState];
-        if (!color || (!color.red && !color.green && !color.blue)) {
-          color = this.defaultColors[statusState.toLowerCase()];
+        if (dndData.snooze_enabled) {
+          availability = Availability.DoNotDisturb;
         }
 
-        this.setSwitchState(statusState, activityState);
+        const statusText = profileData?.profile?.status_text;
+        let colors = this.config.statusColors[statusText] || this.config.statusColors[availability.toLowerCase()];
+        if (!colors || (!colors.red && !colors.green && !colors.blue)) {
+          colors = this.defaultColors[availability.toLowerCase()];
+        }
+
+        this.setSwitchState(availability, statusText);
 
         if (this.config.setColorApi)  {
-          await BusyLightService.post(this.config.setColorApi, color, this.log, this.config.debug);
+          await BusyLightService.post(this.config.setColorApi, colors, this.log, this.config.debug);
         }
       }
     } else {
-      this.setSwitchState(Availability.Offline, null);
-
-      if (this.config.offApi) {
-        await BusyLightService.get(this.config.offApi, this.log, this.config.debug);
-      }
+      await this.turnOff();
     }
 
     this.timeoutIdx = setTimeout(() => {
@@ -210,18 +189,26 @@ export class PresenceAccessory implements HomebridgeAccessory {
     }, (this.config.interval > 0 ? this.config.interval : 1) * 60 * 1000);
   }
 
+  private async turnOff() {
+    this.setSwitchState(Availability.Offline, null);
+
+    if (this.config.offApi) {
+      await BusyLightService.get(this.config.offApi, this.log, this.config.debug);
+    }
+  }
+
   /**
    * Turn the right state on/off of the state switches
    * @param availability 
    */
-  private setSwitchState(availability: Availability, activity: Activity) {
+  private setSwitchState(availability: Availability, statusText: string) {
     const characteristic = PresenceAccessory.characteristic.On;
 
-    if (activity && typeof this.activitySwitches[activity.toLowerCase()] !== "undefined") {
+    if (statusText && typeof this.activitySwitches[statusText.toLowerCase()] !== "undefined") {
       for (const switchName of Object.keys(this.activitySwitches)) {
         const activitySwitch = this.activitySwitches[switchName];
         
-        if (switchName === activity.toLowerCase()) {
+        if (switchName === statusText.toLowerCase()) {
           activitySwitch.getCharacteristic(characteristic).updateValue(true);
         } else {
           activitySwitch.getCharacteristic(characteristic).updateValue(false);
@@ -230,7 +217,6 @@ export class PresenceAccessory implements HomebridgeAccessory {
 
       this.switchAvailable.getCharacteristic(characteristic).updateValue(false);
       this.switchAway.getCharacteristic(characteristic).updateValue(false);
-      this.switchBusy.getCharacteristic(characteristic).updateValue(false);
       this.switchOff.getCharacteristic(characteristic).updateValue(false);
       this.switchDnD.getCharacteristic(characteristic).updateValue(false);
 
@@ -239,37 +225,11 @@ export class PresenceAccessory implements HomebridgeAccessory {
     
     this.switchAvailable.getCharacteristic(characteristic).updateValue(availability === Availability.Available);
     this.switchAway.getCharacteristic(characteristic).updateValue(availability === Availability.Away);
-    this.switchBusy.getCharacteristic(characteristic).updateValue(availability === Availability.Busy);
     this.switchDnD.getCharacteristic(characteristic).updateValue(availability === Availability.DoNotDisturb);
-    this.switchOff.getCharacteristic(characteristic).updateValue(availability !== Availability.DoNotDisturb && availability !== Availability.Busy && availability !== Availability.Away && availability !== Availability.Available);
+    this.switchOff.getCharacteristic(characteristic).updateValue(availability !== Availability.DoNotDisturb && availability !== Availability.Away && availability !== Availability.Available);
 
     for (const switchName of Object.keys(this.activitySwitches)) {
       this.activitySwitches[switchName].getCharacteristic(characteristic).updateValue(false);
-    }
-  }
-
-  /**
-   * Retrieve the availability status
-   * 
-   * @param presence 
-   */
-  private getAvailability(presence: Availability) {
-    switch(presence) {
-      case Availability.Available:
-      case Availability.AvailableIdle:
-        return Availability.Available;
-      case Availability.Away:
-      case Availability.BeRightBack:
-        return Availability.Away;
-      case Availability.Busy:
-      case Availability.BusyIdle:
-        return Availability.Busy;
-      case Availability.DoNotDisturb:
-        return Availability.DoNotDisturb;
-      case Availability.Offline:
-      case Availability.PresenceUnknown:
-      default:
-        return Availability.Offline;
     }
   }
 
