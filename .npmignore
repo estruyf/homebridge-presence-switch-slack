@@ -12,3 +12,5 @@ homebridge.schema.json
 plugin.schema.json
 app.json
 config.txt
+
+assets
