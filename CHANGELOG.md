@@ -1,5 +1,9 @@
 # Changelog
 
+## [15/03/2021] 1.0.0
+
+- First release
+
 ## [15/03/2021] 0.0.5
 
 - Presence + DnD implementation
