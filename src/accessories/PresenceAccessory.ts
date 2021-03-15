@@ -175,7 +175,8 @@ export class PresenceAccessory implements HomebridgeAccessory {
       if (this.config.debug) {
         this.log.info(`Slack profile data ${JSON.stringify(profileData)}`);
       }
-      if (profileData && profileData.ok && profileData.profile && profileData.profile.status_text) {
+      
+      if (profileData && profileData.ok && profileData.profile && typeof profileData.profile.status_text !== "undefined") {
         const activity = profileData.profile.status_text;
         const isInMeeting = activity.toLowerCase().indexOf(this.config.inMeetingText.toLowerCase());
         const statusState = isInMeeting !== -1 ? Availability.Busy : Availability.Available;
