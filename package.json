@@ -1,0 +1,37 @@
+{
+  "name": "homebridge-presence-switch-slack",
+  "version": "0.0.1",
+  "description": "Homebridge Switch for Slack precense status",
+  "license": "MIT",
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "author": "Elio Struyf",
+  "main": "dist/index.js",
+  "scripts": {
+    "prepublish": "npm run build",
+    "start": "tsc -w",
+    "build": "tsc",
+    "publish:next": "npm publish --tag next"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/estruyf/homebridge-presence-switch-slack"
+  },
+  "bugs": {},
+  "engines": {
+    "node": ">=0.12.0",
+    "homebridge": ">=0.2.0"
+  },
+  "dependencies": {
+    "node-fetch": "2.6.1",
+    "node-persist": "3.0.5",
+    "slack": "11.0.2"
+  },
+  "devDependencies": {
+    "@types/node-persist": "3.0.0",
+    "hap-nodejs": "0.4.51",
+    "homebridge": "1.1.6",
+    "typescript": "3.8.3"
+  }
+}
