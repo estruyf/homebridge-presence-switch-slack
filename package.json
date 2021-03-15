@@ -1,6 +1,6 @@
 {
   "name": "homebridge-presence-switch-slack",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Homebridge Switch for Slack precense status",
   "license": "MIT",
   "keywords": [
