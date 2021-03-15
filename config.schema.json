@@ -1,6 +1,6 @@
 {
   "$schema": "https://gist.githubusercontent.com/estruyf/d5696a00569fa67d14e83a965873e51c/raw/a3cfafa01d6d24bf89316ef372ba28ecd44e75ba/homebridge.schema.json",
-  "pluginAlias": "presence-switch",
+  "pluginAlias": "presence-switch-slack",
   "pluginType": "accessory",
   "singular": false,
   "headerDisplay": "Slack Presence Switch",

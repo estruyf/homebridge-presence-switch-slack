@@ -172,11 +172,18 @@ export class PresenceAccessory implements HomebridgeAccessory {
     if (shouldFetch) {
       const token = this.config.oAuthToken;
       const profileData: ProfileData = await slack.users.profile.get({ token }) as ProfileData;
+      if (this.config.debug) {
+        this.log.info(`Slack profile data ${JSON.stringify(profileData)}`);
+      }
       if (profileData && profileData.ok && profileData.profile && profileData.profile.status_text) {
         const activity = profileData.profile.status_text;
         const isInMeeting = activity.toLowerCase().indexOf(this.config.inMeetingText.toLowerCase());
         const statusState = isInMeeting !== -1 ? Availability.Busy : Availability.Available;
         const activityState = isInMeeting !== -1 ? Activity.Busy : Activity.Available;
+
+        if (this.config.debug) {
+          this.log.info(`Slack status: ${statusState} - activity: ${activityState}`);
+        }
         
         let color: RGB = this.config.statusColors[statusState];
         if (!color || (!color.red && !color.green && !color.blue)) {
