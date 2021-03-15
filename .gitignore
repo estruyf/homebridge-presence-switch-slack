@@ -1,0 +1,8 @@
+node_modules/
+dist
+debug
+lib
+
+.DS_Store
+app.js
+config.txt

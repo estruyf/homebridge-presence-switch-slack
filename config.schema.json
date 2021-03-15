@@ -1,0 +1,237 @@
+{
+  "$schema": "https://gist.githubusercontent.com/estruyf/d5696a00569fa67d14e83a965873e51c/raw/a3cfafa01d6d24bf89316ef372ba28ecd44e75ba/homebridge.schema.json",
+  "pluginAlias": "presence-switch",
+  "pluginType": "accessory",
+  "singular": false,
+  "headerDisplay": "Slack Presence Switch",
+  "footerDisplay": "Plugin which allows you to retrieve your status from slack and control your busy light API.",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "type": "object",
+    "required": [
+      "name",
+      "appId"
+    ],
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "Presence Indicator"
+      },
+      "oAuthToken": {
+        "title": "OAuth User Token",
+        "description": "The OAuth User Token to use for the switch.",
+        "type": "string",
+        "default": ""
+      },
+      "inMeetingText": {
+        "title": "In a meeting status text",
+        "description": "Text which you use when in a meeting (In a meeting for Google Calendar app).",
+        "type": "string",
+        "default": "in a meeting"
+      },
+      "interval": {
+        "title": "Interval",
+        "description": "Polling interval.",
+        "type": "integer",
+        "default": 1
+      },
+      "setColorApi": {
+        "title": "Set color API",
+        "description": "API to set the color",
+        "type": "string"
+      },
+      "offApi": {
+        "title": "Off API",
+        "description": "API to turn off your device",
+        "type": "string"
+      },
+      "onApi": {
+        "title": "On API",
+        "description": "API to turn on your device",
+        "type": "string"
+      },
+      "startTime": {
+        "title": "Start time",
+        "description": "Define the time when you start your working day (ex: 8:30).",
+        "type": "string",
+        "default": ""
+      },
+      "endTime": {
+        "title": "End time",
+        "description": "Define the time when you end your working day (ex: 18:00).",
+        "type": "string",
+        "default": ""
+      },
+      "weekend": {
+        "title": "Weekend checks",
+        "description": "Do you want to check in the weekends",
+        "type": "boolean",
+        "default": false
+      },
+      "statusColors": {
+        "title": "Status color",
+        "description": "Define the color values for the following states: 'available', 'busy', and 'away'.",
+        "type": "object",
+        "default": {},
+        "properties": {
+          "available": {
+            "type": "object",
+            "title": "Available",
+            "description": "The color for when you are available.",
+            "default": {},
+            "required": [
+              "red",
+              "green",
+              "blue"
+            ],
+            "properties": {
+              "red": {
+                "type": "integer",
+                "title": "Red",
+                "description": "Value between: 0 - 255.",
+                "default": 0
+              },
+              "green": {
+                "type": "integer",
+                "title": "Green",
+                "description": "Value between: 0 - 255.",
+                "default": 144
+              },
+              "blue": {
+                "type": "integer",
+                "title": "Blue",
+                "description": "Value between: 0 - 255.",
+                "default": 0
+              }
+            }
+          },
+          "away": {
+            "type": "object",
+            "title": "Away",
+            "description": "The color for when you are away.",
+            "default": {},
+            "required": [
+              "red",
+              "green",
+              "blue"
+            ],
+            "properties": {
+              "red": {
+                "type": "integer",
+                "title": "Red",
+                "description": "Value between: 0 - 255.",
+                "default": 255
+              },
+              "green": {
+                "type": "integer",
+                "title": "Green",
+                "description": "Value between: 0 - 255.",
+                "default": 191
+              },
+              "blue": {
+                "type": "integer",
+                "title": "Blue",
+                "description": "Value between: 0 - 255.",
+                "default": 0
+              }
+            }
+          },
+          "busy": {
+            "type": "object",
+            "title": "Busy",
+            "description": "The color for when you are busy.",
+            "default": {},
+            "required": [
+              "red",
+              "green",
+              "blue"
+            ],
+            "properties": {
+              "red": {
+                "type": "integer",
+                "title": "Red",
+                "description": "Value between: 0 - 255.",
+                "default": 179
+              },
+              "green": {
+                "type": "integer",
+                "title": "Green",
+                "description": "Value between: 0 - 255.",
+                "default": 0
+              },
+              "blue": {
+                "type": "integer",
+                "title": "Blue",
+                "description": "Value between: 0 - 255.",
+                "default": 0
+              }
+            }
+          },
+          "donotdisturb": {
+            "type": "object",
+            "title": "Do Not Disturb",
+            "description": "The color for when you are in do not disturb mode.",
+            "default": {},
+            "required": [
+              "red",
+              "green",
+              "blue"
+            ],
+            "properties": {
+              "red": {
+                "type": "integer",
+                "title": "Red",
+                "description": "Value between: 0 - 255.",
+                "default": 149
+              },
+              "green": {
+                "type": "integer",
+                "title": "Green",
+                "description": "Value between: 0 - 255.",
+                "default": 0
+              },
+              "blue": {
+                "type": "integer",
+                "title": "Blue",
+                "description": "Value between: 0 - 255.",
+                "default": 0
+              }
+            }
+          }
+        }
+      },
+      "lightType": {
+        "title": "Light type",
+        "description": "Define the type of light you want to show (not yet supported).",
+        "type": "string",
+        "default": "switch",
+        "oneOf": [
+          {
+            "title": "default",
+            "enum": [ "" ]
+          },
+          {
+            "title": "Always on",
+            "enum": [ "on" ]
+          },
+          {
+            "title": "Blink",
+            "enum": [ "blink" ]
+          },
+          {
+            "title": "Hearthbeat",
+            "enum": [ "hearthbeat" ]
+          }
+        ]
+      },
+      "debug": {
+        "title": "Debug",
+        "type": "boolean",
+        "default": false
+      }
+    }
+  },
+  "form": null,
+  "display": null
+}
